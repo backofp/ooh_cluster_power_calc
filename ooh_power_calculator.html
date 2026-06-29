@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OOH Experiment Power Calculator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface-2: #f0ede8;
+    --border: #dedad3;
+    --text: #1a1917;
+    --text-2: #5a5752;
+    --text-3: #9a9790;
+    --accent: #1a4a8a;
+    --accent-bg: #e8eef7;
+    --accent-text: #0e3060;
+    --success: #1a6644;
+    --success-bg: #e8f4ee;
+    --warn: #7a4a00;
+    --warn-bg: #fef3e2;
+    --danger: #8a1a1a;
+    --danger-bg: #fdf0f0;
+    --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+  }
+
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  header {
+    border-bottom: 1.5px solid var(--text);
+    padding-bottom: 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--text);
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--text-2);
+    margin-top: 0.5rem;
+    line-height: 1.5;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  @media (max-width: 640px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+  }
+
+  .panel-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 1rem;
+    padding-bottom: 0.625rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .slider-group {
+    margin-bottom: 1rem;
+  }
+
+  .slider-group:last-child { margin-bottom: 0; }
+
+  .slider-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 5px;
+  }
+
+  .slider-label span:first-child {
+    font-size: 13px;
+    color: var(--text-2);
+  }
+
+  .slider-label .val {
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--mono);
+    color: var(--text);
+    min-width: 56px;
+    text-align: right;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--surface);
+    box-shadow: 0 0 0 1px var(--accent);
+    cursor: pointer;
+  }
+
+  input[type=range]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--surface);
+    cursor: pointer;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1rem 0;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+
+  .result-cell {
+    background: var(--surface);
+    padding: 1rem 1.125rem;
+  }
+
+  .result-label {
+    font-size: 11px;
+    color: var(--text-3);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .result-value {
+    font-size: 26px;
+    font-weight: 600;
+    font-family: var(--mono);
+    color: var(--text);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .result-sub {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 4px;
+  }
+
+  .mde-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+
+  .mde-cell {
+    background: var(--accent-bg);
+    padding: 1rem 1.125rem;
+  }
+
+  .mde-cell .result-label { color: var(--accent-text); opacity: 0.7; }
+  .mde-cell .result-value { font-size: 22px; color: var(--accent-text); }
+  .mde-cell .result-sub { color: var(--accent-text); opacity: 0.6; }
+
+  .gs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 1.5rem;
+  }
+
+  .gs-table th {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    text-align: left;
+    padding: 0 12px 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .gs-table th:last-child, .gs-table td:last-child { text-align: right; padding-right: 0; }
+
+  .gs-table td {
+    padding: 8px 12px 8px 0;
+    border-bottom: 1px solid var(--surface-2);
+    color: var(--text-2);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .gs-table td:first-child {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .gs-table tfoot td {
+    font-weight: 600;
+    color: var(--text);
+    font-family: var(--mono);
+    border-top: 1.5px solid var(--border);
+    border-bottom: none;
+    padding-top: 10px;
+  }
+
+  .gs-table tfoot td:first-child { font-family: var(--sans); }
+
+  .verdict {
+    padding: 0.875rem 1.125rem;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+  }
+
+  .verdict.good { background: var(--success-bg); color: var(--success); border: 1px solid #b8dfc9; }
+  .verdict.warn { background: var(--warn-bg); color: var(--warn); border: 1px solid #f5d9a0; }
+  .verdict.bad  { background: var(--danger-bg); color: var(--danger); border: 1px solid #f0c0c0; }
+
+  .section-head {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin: 2rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .note {
+    font-size: 12px;
+    color: var(--text-3);
+    line-height: 1.6;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .note strong { color: var(--text-2); font-weight: 600; }
+
+  @media (max-width: 640px) {
+    .results-grid, .mde-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <p class="eyebrow">Camden Strategy</p>
+    <h1>OOH Experiment Power Calculator</h1>
+    <p class="subtitle">ZIP-code randomized out-of-home advertising experiment. Outcome: total 2-way net dem votes per precinct. Calibrated to comparable education experiment (effect=324, SE=193, p=0.093).</p>
+  </header>
+
+  <div class="section-head">Experiment design — ZIP counts by grand stratum</div>
+  <div class="layout">
+    <div class="panel">
+      <p class="panel-title">Background states (MI, GA, NC)</p>
+      <div class="slider-group">
+        <div class="slider-label"><span>GS1 — small metros (pscore=0.50)</span><span class="val" id="gs1_v">404</span></div>
+        <input type="range" id="gs1" min="0" max="800" step="10" value="404">
+      </div>
+      <hr class="divider">
+      <div class="slider-group">
+        <div class="slider-label"><span>GS2 — large metros (pscore=0.69)</span><span class="val" id="gs2_v">347</span></div>
+        <input type="range" id="gs2" min="0" max="700" step="10" value="347">
+      </div>
+    </div>
+    <div class="panel">
+      <p class="panel-title">Expansion states (FL, TX, OH)</p>
+      <div class="slider-group">
+        <div class="slider-label"><span>GS3 — small metros (pscore=0.50)</span><span class="val" id="gs3_v">203</span></div>
+        <input type="range" id="gs3" min="0" max="500" step="10" value="203">
+      </div>
+      <hr class="divider">
+      <div class="slider-group">
+        <div class="slider-label"><span>GS4 — large metros (pscore=0.25)</span><span class="val" id="gs4_v">283</span></div>
+        <input type="range" id="gs4" min="0" max="600" step="10" value="283">
+      </div>
+    </div>
+  </div>
+
+  <div class="section-head">Effect and variance assumptions</div>
+  <div class="layout">
+    <div class="panel">
+      <p class="panel-title">Effect size</p>
+      <div class="slider-group">
+        <div class="slider-label"><span>Expected effect (net dem votes / precinct)</span><span class="val" id="effect_v">324</span></div>
+        <input type="range" id="effect" min="50" max="800" step="10" value="324">
+      </div>
+      <hr class="divider">
+      <div class="slider-group">
+        <div class="slider-label"><span>Precincts per ZIP</span><span class="val" id="ppz_v">3</span></div>
+        <input type="range" id="ppz" min="1" max="15" step="1" value="3">
+      </div>
+    </div>
+    <div class="panel">
+      <p class="panel-title">Variance calibration (comparable experiment)</p>
+      <div class="slider-group">
+        <div class="slider-label"><span>SE anchor (from comparable experiment)</span><span class="val" id="se_v">193</span></div>
+        <input type="range" id="se_comp" min="50" max="400" step="5" value="193">
+      </div>
+      <hr class="divider">
+      <div class="slider-group">
+        <div class="slider-label"><span>Comparable experiment effective metros</span><span class="val" id="ncomp_v">75</span></div>
+        <input type="range" id="n_comp" min="20" max="200" step="5" value="75">
+      </div>
+    </div>
+  </div>
+
+  <div class="section-head">Statistical thresholds</div>
+  <div class="layout">
+    <div class="panel">
+      <div class="slider-group">
+        <div class="slider-label"><span>Significance level (α)</span><span class="val" id="alpha_v">0.10</span></div>
+        <input type="range" id="alpha" min="0.01" max="0.20" step="0.01" value="0.10">
+      </div>
+    </div>
+    <div class="panel">
+      <div class="slider-group">
+        <div class="slider-label"><span>Target power</span><span class="val" id="tpow_v">80%</span></div>
+        <input type="range" id="tpow" min="0.60" max="0.95" step="0.05" value="0.80">
+      </div>
+    </div>
+  </div>
+
+  <div class="section-head">Grand stratum breakdown</div>
+  <table class="gs-table">
+    <thead>
+      <tr>
+        <th>Stratum</th>
+        <th>ZIPs</th>
+        <th>Pscore</th>
+        <th>Var. inflation</th>
+        <th>Approx. metros</th>
+        <th>Eff. metros</th>
+      </tr>
+    </thead>
+    <tbody id="gs_tbody"></tbody>
+    <tfoot>
+      <tr>
+        <td>Total</td>
+        <td id="t_zips">—</td>
+        <td>—</td>
+        <td>—</td>
+        <td id="t_metros">—</td>
+        <td id="t_eff">—</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="section-head">Power results</div>
+  <div id="verdict" class="verdict good"></div>
+
+  <div class="results-grid">
+    <div class="result-cell">
+      <p class="result-label">ZIP-level effect</p>
+      <p class="result-value" id="r_zip_effect">—</p>
+      <p class="result-sub">net dem votes / ZIP</p>
+    </div>
+    <div class="result-cell">
+      <p class="result-label">Effective metros</p>
+      <p class="result-value" id="r_eff_metros">—</p>
+      <p class="result-sub">variance-adjusted</p>
+    </div>
+    <div class="result-cell">
+      <p class="result-label">Expected SE</p>
+      <p class="result-value" id="r_se">—</p>
+      <p class="result-sub">scaled from anchor</p>
+    </div>
+    <div class="result-cell">
+      <p class="result-label">Estimated power</p>
+      <p class="result-value" id="r_power">—</p>
+      <p class="result-sub" id="r_power_sub">at α = 0.10</p>
+    </div>
+  </div>
+
+  <div class="section-head">Minimum detectable effect</div>
+  <div class="mde-grid">
+    <div class="mde-cell">
+      <p class="result-label">MDE (precinct)</p>
+      <p class="result-value" id="r_mde_prec">—</p>
+      <p class="result-sub">net dem votes / precinct</p>
+    </div>
+    <div class="mde-cell">
+      <p class="result-label">MDE (ZIP)</p>
+      <p class="result-value" id="r_mde_zip">—</p>
+      <p class="result-sub">net dem votes / ZIP</p>
+    </div>
+    <div class="mde-cell">
+      <p class="result-label">ZIPs needed</p>
+      <p class="result-value" id="r_zips_needed">—</p>
+      <p class="result-sub">to detect expected effect</p>
+    </div>
+    <div class="mde-cell">
+      <p class="result-label">Metros needed</p>
+      <p class="result-value" id="r_metros_needed">—</p>
+      <p class="result-sub">at avg 3 ZIPs / metro</p>
+    </div>
+  </div>
+
+  <p class="note">
+    <strong>Methodology:</strong> Analysis unit is the precinct (clustered within metro). ZIP-level effect = precinct effect × precincts per ZIP. Expected SE scales from the comparable experiment anchor as SE_new = SE_anchor × precincts_per_ZIP × √(n_comp_eff / total_eff_metros). Effective metros weight each grand stratum by variance inflation 1/(p×(1−p)), where p is the treatment propensity score. Grand stratum 4 (pscore=0.25) contributes the least power per ZIP. Comparable experiment: education OOH experiment, net_dem_votes_2way outcome, effect=324, SE=193, p=0.093, CR2 cluster-robust SEs.
+  </p>
+
+</div>
+
+<script>
+const AVG_ZPM = 3.04;
+
+const STRATA = [
+  { id: 'gs1', label: 'GS1 — small metros / BG states', p: 0.50 },
+  { id: 'gs2', label: 'GS2 — large metros / BG states', p: 0.694 },
+  { id: 'gs3', label: 'GS3 — small metros / FL+TX+OH',  p: 0.50 },
+  { id: 'gs4', label: 'GS4 — large metros / FL+TX+OH',  p: 0.25 },
+];
+
+function ncdf(z) {
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const s = z < 0 ? -1 : 1;
+  z = Math.abs(z)/Math.sqrt(2);
+  const t = 1/(1+p*z);
+  const y = 1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-z*z);
+  return 0.5*(1+s*y);
+}
+
+function nq(p) {
+  const c=[2.515517,0.802853,0.010328], d=[1.432788,0.189269,0.001308];
+  const q = p < 0.5 ? p : 1-p;
+  const t = Math.sqrt(-2*Math.log(q));
+  const x = t-(c[0]+c[1]*t+c[2]*t*t)/(1+d[0]*t+d[1]*t*t+d[2]*t*t*t);
+  return p < 0.5 ? -x : x;
+}
+
+function fmt(n)  { return Math.round(n).toLocaleString(); }
+function fmtp(n) { return (Math.min(n,1)*100).toFixed(1)+'%'; }
+function fmtf(n,d=2) { return n.toFixed(d); }
+
+function update() {
+  const gs_n   = STRATA.map(s => +document.getElementById(s.id).value);
+  const effect  = +document.getElementById('effect').value;
+  const ppz     = +document.getElementById('ppz').value;
+  const se_comp = +document.getElementById('se_comp').value;
+  const n_comp  = +document.getElementById('n_comp').value;
+  const alpha   = +document.getElementById('alpha').value;
+  const tpow    = +document.getElementById('tpow').value;
+
+  document.getElementById('gs1_v').textContent   = gs_n[0];
+  document.getElementById('gs2_v').textContent   = gs_n[1];
+  document.getElementById('gs3_v').textContent   = gs_n[2];
+  document.getElementById('gs4_v').textContent   = gs_n[3];
+  document.getElementById('effect_v').textContent = effect;
+  document.getElementById('ppz_v').textContent   = ppz;
+  document.getElementById('se_v').textContent    = se_comp;
+  document.getElementById('ncomp_v').textContent = n_comp;
+  document.getElementById('alpha_v').textContent = alpha.toFixed(2);
+  document.getElementById('tpow_v').textContent  = Math.round(tpow*100)+'%';
+
+  let total_zips=0, total_metros=0, total_eff=0;
+  const tbody = document.getElementById('gs_tbody');
+  tbody.innerHTML = '';
+
+  STRATA.forEach((s,i) => {
+    const n   = gs_n[i];
+    const vi  = 1/(s.p*(1-s.p));
+    const met = n/AVG_ZPM;
+    const eff = met/vi;
+    total_zips   += n;
+    total_metros += met;
+    total_eff    += eff;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${s.label}</td><td>${n}</td><td>${s.p.toFixed(3)}</td><td>${fmtf(vi)}</td><td>${fmtf(met,0)}</td><td>${fmtf(eff,1)}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('t_zips').textContent   = fmt(total_zips);
+  document.getElementById('t_metros').textContent = fmtf(total_metros,0);
+  document.getElementById('t_eff').textContent    = fmtf(total_eff,1);
+
+  const effect_zip = effect * ppz;
+  const se_new     = se_comp * ppz * Math.sqrt(n_comp / total_eff);
+  const za         = nq(1-alpha/2);
+  const zp         = nq(tpow);
+  const z_stat     = effect_zip / se_new;
+  const power      = ncdf(z_stat-za)+(1-ncdf(z_stat+za));
+  const mde_zip    = (za+zp)*se_new;
+  const mde_prec   = mde_zip/ppz;
+  const eff_needed = n_comp*Math.pow((za+zp)*se_comp*ppz/effect_zip,2);
+  const zips_need  = Math.ceil(eff_needed*AVG_ZPM*4);
+  const metr_need  = Math.ceil(eff_needed*AVG_ZPM);
+
+  document.getElementById('r_zip_effect').textContent  = fmt(effect_zip);
+  document.getElementById('r_eff_metros').textContent  = fmtf(total_eff,1);
+  document.getElementById('r_se').textContent          = fmt(se_new);
+  document.getElementById('r_power').textContent       = fmtp(power);
+  document.getElementById('r_power_sub').textContent   = 'at α = '+alpha.toFixed(2);
+  document.getElementById('r_mde_prec').textContent    = fmt(mde_prec);
+  document.getElementById('r_mde_zip').textContent     = fmt(mde_zip);
+  document.getElementById('r_zips_needed').textContent = fmt(zips_need);
+  document.getElementById('r_metros_needed').textContent = fmt(metr_need);
+
+  const vd = document.getElementById('verdict');
+  if (power >= tpow) {
+    vd.className='verdict good';
+    vd.textContent = '✓ Adequately powered — estimated power of '+fmtp(power)+' meets the '+Math.round(tpow*100)+'% target at α = '+alpha.toFixed(2)+'. ZIP-level MDE is '+fmt(mde_zip)+' net dem votes.';
+  } else if (power >= 0.60) {
+    vd.className='verdict warn';
+    vd.textContent = '⚠ Underpowered — estimated power is '+fmtp(power)+', below the '+Math.round(tpow*100)+'% target. Consider reducing GS4 ZIPs (lowest power efficiency) or loosening α. Need '+fmt(zips_need)+' total ZIPs at current assumptions.';
+  } else {
+    vd.className='verdict bad';
+    vd.textContent = '✗ Substantially underpowered — estimated power is only '+fmtp(power)+'. Need '+fmt(zips_need)+' ZIPs to detect a '+fmt(effect_zip)+'-vote ZIP-level effect at '+Math.round(tpow*100)+'% power.';
+  }
+}
+
+['gs1','gs2','gs3','gs4','effect','ppz','se_comp','n_comp','alpha','tpow'].forEach(id => {
+  document.getElementById(id).addEventListener('input', update);
+});
+update();
+</script>
+</body>
+</html>
